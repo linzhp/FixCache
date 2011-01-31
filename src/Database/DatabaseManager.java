@@ -26,7 +26,7 @@ public class DatabaseManager {
             fis = new FileInputStream(file);
             Properties prop = new Properties();
             prop.load(fis);
-            Enumeration enums = prop.propertyNames();
+            Enumeration<?> enums = prop.propertyNames();
             drivername = (String) prop.get("Driver");
             databasename = (String) prop.get("URL");
             username = (String) prop.get("UserName");

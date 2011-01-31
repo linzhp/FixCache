@@ -63,6 +63,11 @@ public class CmdLineParser {
 	 * Base class for exceptions that may be thrown when options are parsed
 	 */
 	public static abstract class OptionException extends Exception {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
 		OptionException(String msg) { super(msg); }
 	}
 
@@ -73,6 +78,10 @@ public class CmdLineParser {
 	 * English).
 	 */
 	public static class UnknownOptionException extends OptionException {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -383087311622042138L;
 		UnknownOptionException( String optionName ) {
 			this(optionName, "Unknown option '" + optionName + "'");
 		}
@@ -98,6 +107,10 @@ public class CmdLineParser {
 	 */
 	public static class UnknownSuboptionException
 	extends UnknownOptionException {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 		private char suboption;
 
 		UnknownSuboptionException( String option, char suboption ) {
@@ -115,6 +128,10 @@ public class CmdLineParser {
 	 * @author Vidar Holen
 	 */
 	public static class NotFlagException extends UnknownOptionException {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 		private char notflag;
 
 		NotFlagException( String option, char unflaggish ) {
@@ -136,6 +153,10 @@ public class CmdLineParser {
 	 * English).
 	 */
 	public static class IllegalOptionValueException extends OptionException {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
 		public IllegalOptionValueException( Option opt, String value ) {
 			super("Illegal value '" + value + "' for option " +
 					(opt.shortForm() != null ? "-" + opt.shortForm() + "/" : "") +
