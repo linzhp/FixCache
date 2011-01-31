@@ -17,21 +17,22 @@ public class CacheItem {
     static final String findNumberOfAuthors = 
         "select count(id) from people " +
         "where id in( " +
-            "select author_id from scmlog, actions " +
-            "where scmlog.id = actions.commit_id " +
-                "and date <=? and date >= ? and file_id = ?)";
+            "select author_id from scmlog, actions, files" +
+            " where scmlog.id = actions.commit_id " +
+                "and date between ? and ? and actions.file_id=files.id and file_name = ?)";
     static final String findNumberOfChanges = 
         "select count(actions.id) " +
-        "from actions, scmlog " +
-        "where actions.commit_id = scmlog.id " +
-        "and date <=? and date >=? and file_id=?";
+        "from actions, scmlog, files" +
+        " where actions.commit_id = scmlog.id " +
+        "and date between ? and ? and actions.file_id=files.id and file_name=?";
     static final String findNumberOfBugs = 
-        "select count(commit_id) from actions " +
-        "where file_id=? and commit_id in " +
+        "select count(commit_id) from actions, files " +
+        "where actions.file_id=files.id and file_name=? and commit_id in " +
             "(select id from scmlog " +
-            "where is_bug_fix=1 and date <=? and date >=?)";
+            "where is_bug_fix=1 and date between ? and ?)";
     static final String findLoc = 
-        "select loc from content_loc where file_id=? and commit_id =?";
+        "select loc from content_loc, files where content_loc.file_id=files.id and" +
+        " file_name=? and commit_id =?";
     private static PreparedStatement findNumberOfAuthorsQuery;
     private static PreparedStatement findNumberOfChangesQuery;
     private static PreparedStatement findNumberOfBugsQuery;
@@ -43,29 +44,35 @@ public class CacheItem {
     
     // this enum tracks reason for cache entry and is used by other classes
     public enum CacheReason {
-        Prefetch, CoChange, NewEntity, ModifiedEntity, BugEntity
+        Preload, CoChange, NewEntity, ModifiedEntity, BugEntity
     }
 
-    private final int entityId; // id of file
+    private final String fileName; // id of file
     private int loadDate; // changed on cache hit
     private int LOC; // changed on cache hit
     private int number; // represents either the number of bugs, changes, or authors
     private int loadCount = 0; //count how many time a file is put into cache 
+    private int loadDuration = 0; //represents how long in repo time a file stays in cache
+    private String timeAdded; //represents repo time when a file is added to cache
     private final Cache parent;
     private boolean inCache = false; // stores whether the cacheitem is in the cache
+    private int hitCount = 0;
+    private int missCount = 0;
 
-    @SuppressWarnings("unused") // may be useful output
+    //@SuppressWarnings("unused") // may be useful output
     private CacheReason reason; 
 
     /**
      * Methods
      */
     
-    public CacheItem(int eid, int cid, String cdate, CacheReason r, Cache p) {
-        entityId = eid;
+    public CacheItem(String fName, int cid, String cdate, CacheReason r, Cache p) {
+        fileName = fName;
         reason = r;
         parent = p;
-        update(cid, cdate, p.getStartDate());
+        update(cid, cdate, p.getStartDate(), r);
+        assert(r != CacheReason.BugEntity || missCount != 0);
+        assert(parent.neverInCache(fileName));
     }
     
     
@@ -77,24 +84,32 @@ public class CacheItem {
      * @param cdate -- commit date
      * @param sdate -- starting date
      */
-    public void update(int cid, String cdate, String sdate) {
+    public void update(int cid, String cdate, String sdate, CacheReason r) {
         // update the load count each time an entry is added to the cache
         if (!inCache){
             inCache = true;
             loadCount++;
+            timeAdded = cdate;
+            if (r == CacheReason.BugEntity)
+                missCount++;
+        } else { //is in cache
+            if (r == CacheReason.BugEntity)            
+                hitCount++;
         }
         loadDate = parent.getTime(); 
-        LOC = findLoc(entityId, cid);
-        number = findNumber(entityId, parent.repID, cdate, sdate, parent.getPolicy());
+        LOC = findLoc(fileName, cid);
+        number = findNumber(fileName, parent.repID, cdate, sdate, parent.getPolicy());
     }
     
     public boolean isInCache(){
         return inCache;
     }
     
-    public void removeFromCache(){
+    public int removeFromCache(String cdate){ 
+        loadDuration += Util.Dates.getMinuteDuration(timeAdded, cdate);
         assert(inCache);
         inCache = false;
+        return loadDuration;
     }
 
     // XXX: Do we need pid? or is eid unique enough for the called methods?
@@ -106,17 +121,17 @@ public class CacheItem {
      * @param start -- the starting date for repository access
      * @return the number of bug fixes for file eid in repository pid between cdate and start
      */
-    private static int findNumber(int eid, int pid, String cdate, String sdate, Policy pol) {
+    private static int findNumber(String fileName, int pid, String cdate, String sdate, Policy pol) {
         int ret = 0;
         switch (pol) {
         case BUGS:
-            ret = findNumberOfBugs(eid, pid, cdate, sdate);
+            ret = findNumberOfBugs(fileName, pid, cdate, sdate);
             break;
         case CHANGES:
-            ret = findNumberOfChanges(eid, pid, cdate, sdate);
+            ret = findNumberOfChanges(fileName, pid, cdate, sdate);
             break;
         case AUTHORS:
-            ret = findNumberOfAuthors(eid, pid, cdate, sdate);
+            ret = findNumberOfAuthors(fileName, pid, cdate, sdate);
             break;
         case LRU: // do nothing
         }
@@ -132,14 +147,14 @@ public class CacheItem {
      * @param start -- the starting date for repository access
      * @return the number of distinct authors for file eid in repository pid between cdate and start
      */
-    private static int findNumberOfAuthors(int eid, int pid, String cdate, String start) {
+    private static int findNumberOfAuthors(String fileName, int pid, String cdate, String start) {
         int ret = 0;
         try {
             if (findNumberOfAuthorsQuery == null)
                 findNumberOfAuthorsQuery = conn.prepareStatement(findNumberOfAuthors);
-            findNumberOfAuthorsQuery.setString(1, cdate);
-            findNumberOfAuthorsQuery.setString(2, start);
-            findNumberOfAuthorsQuery.setInt(3, eid);
+            findNumberOfAuthorsQuery.setString(1, start);
+            findNumberOfAuthorsQuery.setString(2, cdate);
+            findNumberOfAuthorsQuery.setString(3, fileName);  // XXX fix query to use file_name
             ret = Util.Database.getIntResult(findNumberOfAuthorsQuery);
         } catch (SQLException e1) {
             e1.printStackTrace();
@@ -156,14 +171,14 @@ public class CacheItem {
      * @param start -- the starting date for repository access
      * @return the number of commits for file eid in repository pid between cdate and start
      */
-    private static int findNumberOfChanges(int eid, int pid, String cdate, String start) {
+    private static int findNumberOfChanges(String fileName, int pid, String cdate, String start) {
         int ret = 0;
         try {
             if (findNumberOfChangesQuery == null)
                 findNumberOfChangesQuery = conn.prepareStatement(findNumberOfChanges);
-            findNumberOfChangesQuery.setString(1, cdate);
-            findNumberOfChangesQuery.setString(2, start);
-            findNumberOfChangesQuery.setInt(3, eid);
+            findNumberOfChangesQuery.setString(1, start);
+            findNumberOfChangesQuery.setString(2, cdate);
+            findNumberOfChangesQuery.setString(3, fileName); // XXX fix query to use file_name
             ret = Util.Database.getIntResult(findNumberOfChangesQuery);
         } catch (SQLException e1) {
             e1.printStackTrace();
@@ -179,15 +194,15 @@ public class CacheItem {
      * @param start -- the starting date for repository access
      * @return the number of bug fixes for file eid in repository pid between cdate and start
      */
-    private static int findNumberOfBugs(int eid, int pid, String cdate, String start) {
+    private static int findNumberOfBugs(String fileName, int pid, String cdate, String start) {
         int ret = 0;
         try {
             if (findNumberOfBugsQuery == null)
                 findNumberOfBugsQuery = conn.prepareStatement(findNumberOfBugs);
 
-            findNumberOfBugsQuery.setInt(1, eid);
-            findNumberOfBugsQuery.setString(2, cdate);
-            findNumberOfBugsQuery.setString(3, start);
+            findNumberOfBugsQuery.setString(1, fileName); // XXX fix query to use file_name
+            findNumberOfBugsQuery.setString(2, start);
+            findNumberOfBugsQuery.setString(3, cdate);
             ret = Util.Database.getIntResult(findNumberOfBugsQuery);
         } catch (SQLException e1) {
             e1.printStackTrace();
@@ -201,12 +216,12 @@ public class CacheItem {
      * @param cid -- commit id
      * @return the lines of code for eid at cid
      */
-    private static int findLoc(int eid, int cid) {
+    private static int findLoc(String fileName, int cid) {
         int ret = 0;
         try {
             if (findLocQuery == null)
                 findLocQuery = conn.prepareStatement(findLoc);
-            findLocQuery.setInt(1, eid);
+            findLocQuery.setString(1, fileName); // XXX fix query to use file_name
             findLocQuery.setInt(2, cid);
             ret = Util.Database.getIntResult(findLocQuery);
         } catch (SQLException e1) {
@@ -218,14 +233,14 @@ public class CacheItem {
     /**
      * @return Returns the entityId.
      */
-    public int getEntityId() {
-        return entityId;
+    public String getFileName() {
+        return fileName;
     }
 
     /**
      * @return Returns the cachedDate.
      */
-    public int getCachedDate() {
+    public int getLoadedDate() {
         return loadDate;
     }
 
@@ -268,11 +283,37 @@ public class CacheItem {
     }
     
     /**
+     * @return Returns the hitcount
+     */
+    public int getHitCount() {
+        return hitCount;
+    }
+    
+    /**
      * for debugging; used only for the DBUnit tests
      * @return number
      */
     protected int getNumber() {
         return number;
+    }
+    
+    public CacheReason getReason(){
+        return reason;
+    }
+
+	/**
+	 * 
+	 * @return the amount of time this cache item was in cache
+	 */
+	public int getDuration() {
+	    if(inCache)
+	        loadDuration += Util.Dates.getMinuteDuration(timeAdded, parent.endDate);
+	    return loadDuration;
+	}
+
+
+    public int getMissCount() {
+        return missCount;
     }
 
 }

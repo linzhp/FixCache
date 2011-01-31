@@ -9,7 +9,7 @@ public class Database {
 	
 	public static int getIntResult (PreparedStatement intQuery) throws SQLException 
 	{
-		int res = 0;
+		int res = -1;
 		ResultSet r = intQuery.executeQuery();
 		if (r.next()){
 			res = r.getInt(1);
@@ -32,7 +32,7 @@ public class Database {
 	
 	public static String getStringResult (PreparedStatement stringQuery) throws SQLException 
 	{
-		String res = "";
+		String res = null;
 		ResultSet r = stringQuery.executeQuery();
 		if(r.next())
 		{

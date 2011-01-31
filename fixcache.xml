@@ -1,15 +1,15 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <dataset>
-  <scmlog id="1" rev="ab01" committer_id="1" author_id="2" date="2009-10-20 01:32:19.0" repository_id="1" is_bug_fix="false"/>
-  <scmlog id="2" rev="ab02" committer_id="1" author_id="1" date="2009-10-20 14:37:38.0" repository_id="1" is_bug_fix="false"/>
-  <scmlog id="3" rev="ab03" committer_id="2" author_id="1" date="2009-10-20 14:37:47.0" repository_id="1" is_bug_fix="true"/>
-  <scmlog id="4" rev="ab04" committer_id="2" author_id="2" date="2009-10-21 11:02:49.0" repository_id="1" is_bug_fix="false"/>
-  <scmlog id="5" rev="ab05" committer_id="5" author_id="3" date="2009-10-23 14:10:37.0" repository_id="1" is_bug_fix="true"/>
-  <scmlog id="6" rev="ab06" committer_id="2" author_id="2" date="2009-10-23 14:29:05.0" repository_id="1" is_bug_fix="true"/>
-  <scmlog id="7" rev="ab07" committer_id="3" author_id="5" date="2009-10-23 20:01:52.0" repository_id="1" is_bug_fix="true"/>
-  <scmlog id="8" rev="ab08" committer_id="3" author_id="5" date="2009-10-24 07:51:22.0" repository_id="1" is_bug_fix="false"/>
-  <scmlog id="9" rev="ab09" committer_id="3" author_id="4" date="2009-10-24 09:50:26.0" repository_id="1" is_bug_fix="true"/>
-  <scmlog id="10" rev="ab10" committer_id="3" author_id="4" date="2009-10-24 14:30:54.0" repository_id="1" is_bug_fix="true"/>
+  <scmlog id="1" rev="ab01" committer_id="1" author_id="2" date="2009-10-20 01:32:19" repository_id="1" is_bug_fix="false"/>
+  <scmlog id="2" rev="ab02" committer_id="1" author_id="1" date="2009-10-20 14:37:38" repository_id="1" is_bug_fix="false"/>
+  <scmlog id="3" rev="ab03" committer_id="2" author_id="1" date="2009-10-20 14:37:47" repository_id="1" is_bug_fix="true"/>
+  <scmlog id="4" rev="ab04" committer_id="2" author_id="2" date="2009-10-21 11:02:49" repository_id="1" is_bug_fix="false"/>
+  <scmlog id="5" rev="ab05" committer_id="5" author_id="3" date="2009-10-23 14:10:37" repository_id="1" is_bug_fix="true"/>
+  <scmlog id="6" rev="ab06" committer_id="2" author_id="2" date="2009-10-23 14:29:05" repository_id="1" is_bug_fix="true"/>
+  <scmlog id="7" rev="ab07" committer_id="3" author_id="5" date="2009-10-23 20:01:52" repository_id="1" is_bug_fix="true"/>
+  <scmlog id="8" rev="ab08" committer_id="3" author_id="5" date="2009-10-24 07:51:22" repository_id="1" is_bug_fix="false"/>
+  <scmlog id="9" rev="ab09" committer_id="3" author_id="4" date="2009-10-24 09:50:26" repository_id="1" is_bug_fix="true"/>
+  <scmlog id="10" rev="ab10" committer_id="3" author_id="4" date="2009-10-24 14:30:54" repository_id="1" is_bug_fix="true"/>
   <people id="1" name="Jack" email="jack@gmail.com"/>
   <people id="2" name="Lily" email="lily@gmail.com"/>
   <people id="3" name="Peter" email="peter@hotmail.com"/>
@@ -43,6 +43,14 @@
   <file_types id="6" file_id="6" type="code"/>
   <file_types id="7" file_id="7" type="code"/>
   <file_types id="8" file_id="8" type="code"/>
+  <files id="1" file_name="a.java" repository_id="1"/>
+  <files id="2" file_name="b" repository_id="1"/>
+  <files id="3" file_name="c.java" repository_id="1"/>
+  <files id="4" file_name="d.java" repository_id="1"/>
+  <files id="5" file_name="e.java" repository_id="1"/>
+  <files id="6" file_name="f.java" repository_id="1"/>
+  <files id="7" file_name="g.java" repository_id="1"/>
+  <files id="8" file_name="h.java" repository_id="1"/>
   <content id="1" commit_id="1" file_id="1" content="a;&#xA;b;"/>
   <content id="2" commit_id="1" file_id="2" content="a&#xA;b&#xA;c;&#xA;d;&#xA;e;"/>
   <content id="3" commit_id="1" file_id="3" content="a;&#xA;b;&#xA;c;"/>
@@ -115,5 +123,6 @@
   <hunk_blames id="19" hunk_id="32" bug_commit_id="3"/>
   <hunk_blames id="20" hunk_id="33" bug_commit_id="5"/>
   <hunk_blames id="21" hunk_id="34" bug_commit_id="6"/>
+  <repositories id="1" uri="" name="test" type="test"/>
   </dataset>
 

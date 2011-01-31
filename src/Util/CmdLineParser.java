@@ -44,7 +44,6 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.Enumeration;
 import java.util.Locale;
 
 /**
@@ -57,6 +56,8 @@ import java.util.Locale;
  * @version $Revision$
  * @see jargs.examples.gnu.OptionTest
  */
+
+@SuppressWarnings("all")
 public class CmdLineParser {
 
 	/**
@@ -105,11 +106,7 @@ public class CmdLineParser {
 	 * string.
 	 * @author Vidar Holen
 	 */
-	public static class UnknownSuboptionException
-	extends UnknownOptionException {
-		/**
-		 * 
-		 */
+	public static class UnknownSuboptionException extends UnknownOptionException {
 		private static final long serialVersionUID = 1L;
 		private char suboption;
 
