@@ -268,10 +268,9 @@ public class Simulator {
 
             // returns all commits to pid after cache.startDate
             allCommits = findCommitQuery.executeQuery();
-System.out.println("find all commits");
             while (allCommits.next()) {
                 incCommits();
-                cid = allCommits.getInt(1);System.out.println(cid);
+                cid = allCommits.getInt(1);
                 cdate = allCommits.getString(2);
                 isBugFix = allCommits.getBoolean(3);
 
