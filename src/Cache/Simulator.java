@@ -30,6 +30,12 @@ public class Simulator {
     static final String findBugIntroCdate = "select date from hunk_blames, scmlog "
         + "where hunk_id =? and hunk_blames.bug_commit_id=scmlog.id";
     static final String findPid = "select id from repositories where id=?";
+    static final String dropCacheTable = "drop table if exists actions_cache";
+    static final String createCacheTable = "create table actions_cache " +
+    		"select files.file_name, actions.file_id, actions.commit_id, actions.type " +
+    		"from actions, files, file_types " +
+    		"where actions.file_id=files.id and files.id=file_types.file_id and " +
+    		"file_types.type='code' and files.repository_id=?";
     static final String findFileCount = "select count(distinct(file_name)) " +
     		"from files, file_types "
         + "where files.id = file_types.file_id and type = 'code' and repository_id=?";
@@ -49,8 +55,10 @@ public class Simulator {
     private PreparedStatement findHunkIdQuery;
     private PreparedStatement findBugIntroCdateQuery;
     private static PreparedStatement findPidQuery;
+    private static PreparedStatement dropCacheTableQuery;
+    private static PreparedStatement createCacheTableQuery;
     private static PreparedStatement findFileCountQuery;
-    private PreparedStatement findFileCountTimeQuery;
+//    private PreparedStatement findFileCountTimeQuery;
 
     /**
      * From the actions table. See the cvsanaly manual
@@ -624,6 +632,7 @@ public class Simulator {
         }
 
         checkParameter(start, end, pid);
+        createCacheTable(pid);
         /**
          * Create a new simulator and run simulation.
          */
@@ -652,11 +661,32 @@ public class Simulator {
         }
 
         // should always happen
+        dropCacheTable();
         sim.close();
         printSummary(sim);
     }
 
 
+    public static void createCacheTable(int pid)
+    {
+        dropCacheTable();
+        try{
+             createCacheTableQuery = conn.prepareStatement(createCacheTable);
+             createCacheTableQuery.setInt(1, pid);
+             createCacheTableQuery.execute();
+        }catch (SQLException e) {
+            e.printStackTrace();}
+       
+    }
+    public static void dropCacheTable()
+    {
+        try{
+            dropCacheTableQuery = conn.prepareStatement(dropCacheTable);
+            dropCacheTableQuery.execute();
+       }catch (SQLException e) {
+           e.printStackTrace();}
+    }
+    
     private static void printSummary(Simulator sim) {
         System.out.println("Simulator specs:");
         System.out.print("Project....");
