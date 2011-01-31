@@ -18,12 +18,18 @@ public class CoChange {
      * database setup
      */
     final static Connection conn = DatabaseManager.getConnection();
-    static final String findCommitId = "SELECT commit_id from actions, scmlog, files " +
-            "where file_name=? and actions.file_id=files.id and actions.commit_id=scmlog.id and " +
-            "date between ? and ?";
-    static final String findCochangeFileName = "SELECT file_name from files, actions, file_types " +
-    		"where files.id=actions.file_id and commit_id =? and " +
-    		"files.id=file_types.file_id and file_types.type='code'";
+    static final String findCommitId = "select commit_id from actions_cache, scmlog" +
+    		" where actions_cache.file_name=? and actions_cache.commit_id=scmlog.id" +
+    		" and date between ? and ?";
+        
+//    static final String findCommitId = "SELECT commit_id from actions, scmlog, files " +
+//            "where file_name=? and actions.file_id=files.id and actions.commit_id=scmlog.id and " +
+//            "date between ? and ?";
+    static final String findCochangeFileName = "select file_name from actions_cache " +
+    		"where commit_id=?";
+//    static final String findCochangeFileName = "SELECT file_name from files, actions, file_types " +
+//    		"where files.id=actions.file_id and commit_id =? and " +
+//    		"files.id=file_types.file_id and file_types.type='code'";
     private static PreparedStatement findCommitIdQuery;
     private static PreparedStatement findCochangeFileNameQuery;
 

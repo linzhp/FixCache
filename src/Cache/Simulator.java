@@ -20,13 +20,16 @@ public class Simulator {
     
     static final String findCommit = "select id, date, is_bug_fix from scmlog "
         + "where repository_id =? and date between ? and ? order by date ASC";
-    static final String findFile = "select file_name, type from actions, content_loc, files "
-        + "where actions.file_id=content_loc.file_id and actions.file_id=files.id "
-        + "and actions.commit_id=? and content_loc.commit_id=? "
-        + "and actions.file_id in( "
-        + "select file_id from file_types where type='code') order by loc DESC";
-    static final String findHunkId = "select hunks.id from hunks, files where hunks.file_id=files.id and " +
-    		"file_name =? and commit_id =?";
+    static final String findFile = "select file_name, type from actions_cache, content_loc" +
+    		" where actions_cache.file_id=content_loc.file_id and actions_cache.commit_id=? and " +
+    		"content_loc.commit_id=? order by loc DESC";
+//    static final String findFile = "select file_name, type from actions, content_loc, files "
+//        + "where actions.file_id=content_loc.file_id and actions.file_id=files.id "
+//        + "and actions.commit_id=? and content_loc.commit_id=? "
+//        + "and actions.file_id in( "
+//        + "select file_id from file_types where type='code') order by loc DESC";
+    static final String findHunkId = "select hunks.id from hunks, files " +
+    		"where hunks.file_id=files.id and file_name =? and commit_id =?";
     static final String findBugIntroCdate = "select date from hunk_blames, scmlog "
         + "where hunk_id =? and hunk_blames.bug_commit_id=scmlog.id";
     static final String findPid = "select id from repositories where id=?";
@@ -265,10 +268,10 @@ public class Simulator {
 
             // returns all commits to pid after cache.startDate
             allCommits = findCommitQuery.executeQuery();
-
+System.out.println("find all commits");
             while (allCommits.next()) {
                 incCommits();
-                cid = allCommits.getInt(1);
+                cid = allCommits.getInt(1);System.out.println(cid);
                 cdate = allCommits.getString(2);
                 isBugFix = allCommits.getBoolean(3);
 
@@ -390,14 +393,20 @@ public class Simulator {
      * input: pre-fetch size
      */
     public void initialPreLoad() {
+        System.out.println("initial preload");
 
-        final String findInitialPreload = "select files.file_name, content_loc.commit_id "
-            + "from content_loc, scmlog, actions, file_types, files "
-            + "where files.repository_id=? and content_loc.commit_id = scmlog.id and date =? "
-            + "and content_loc.file_id=actions.file_id and files.id=actions.file_id "
-            + "and content_loc.commit_id=actions.commit_id and actions.type!='D' "
-            + "and file_types.file_id=content_loc.file_id and file_types.type='code' " +
-            		"order by loc DESC";
+        final String findInitialPreload = "select actions_cache.file_name, content_loc.commit_id"
+            +" from actions_cache, scmlog, content_loc"
+            +" where actions_cache.file_id=content_loc.file_id and actions_cache.commit_id=scmlog.id"
+            +" and actions_cache.commit_id=content_loc.commit_id and actions_cache.type!='D' and"
+            +" scmlog.date=? order by loc DESC";
+//        final String findInitialPreload = "select files.file_name, content_loc.commit_id "
+//            + "from content_loc, scmlog, actions, file_types, files "
+//            + "where files.repository_id=? and content_loc.commit_id = scmlog.id and date =? "
+//            + "and content_loc.file_id=actions.file_id and files.id=actions.file_id "
+//            + "and content_loc.commit_id=actions.commit_id and actions.type!='D' "
+//            + "and file_types.file_id=content_loc.file_id and file_types.type='code' " +
+//            		"order by loc DESC";
         final PreparedStatement findInitialPreloadQuery;
         ResultSet r = null;
         String fileName = null;
@@ -405,8 +414,7 @@ public class Simulator {
 
         try {
             findInitialPreloadQuery = conn.prepareStatement(findInitialPreload);
-            findInitialPreloadQuery.setInt(1, pid);
-            findInitialPreloadQuery.setString(2, cache.startDate);
+            findInitialPreloadQuery.setString(1, cache.startDate);
             r = findInitialPreloadQuery.executeQuery();
         } catch (SQLException e1) {
             e1.printStackTrace();
@@ -648,9 +656,9 @@ public class Simulator {
         else
         {
             sim = new Simulator(blksz, pfsz, csz, pid, crp, start, end, saveToFile);
-            if (monthly) sim.outputMultiple();
-            sim.initialPreLoad();
-            sim.simulate();
+            if (monthly) sim.outputMultiple();System.out.println("start initial preload");
+            sim.initialPreLoad();System.out.println("start simulate");
+            sim.simulate();System.out.println("end simulate");
 
             if(sim.saveToFile==true)
             {
@@ -674,9 +682,24 @@ public class Simulator {
              createCacheTableQuery = conn.prepareStatement(createCacheTable);
              createCacheTableQuery.setInt(1, pid);
              createCacheTableQuery.execute();
+             createIndex();
         }catch (SQLException e) {
             e.printStackTrace();}
        
+    }
+    
+    public static void createIndex()
+    {
+        String createCommitIdIndex = "create index commitIdIndex on actions_cache(commit_id)";
+        String createFileIdIndex = "create index fileIdIndex on actions_cache(file_id)";
+        try{
+            PreparedStatement createCommitIdIndexQuery=conn.prepareStatement(createCommitIdIndex);
+            PreparedStatement createFileIdQuery = conn.prepareStatement(createFileIdIndex);
+            createCommitIdIndexQuery.execute();
+            createFileIdQuery.execute();
+        }catch (SQLException e) {
+            e.printStackTrace();}
+        
     }
     public static void dropCacheTable()
     {
