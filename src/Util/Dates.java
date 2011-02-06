@@ -6,17 +6,14 @@ import org.joda.time.Months;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import java.lang.StringBuilder;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class Dates {
-//	static DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+    
     static final DateTimeFormatter fmt = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.S");
     static StringBuilder range;
 
 	public static DateTime toDateTime(String date){
+	    
 	    return fmt.parseDateTime(date);
 	}
 	
@@ -27,7 +24,6 @@ public class Dates {
 
 	public static int getMinuteDuration(String start, String end)
 	{
-//		toDateTime(start).compareTo(toDateTime(end));
 	    return Minutes.minutesBetween(toDateTime(start), toDateTime(end)).getMinutes();
 	}
 	
